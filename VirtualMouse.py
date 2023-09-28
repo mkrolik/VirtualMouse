@@ -121,10 +121,11 @@ class Maze:
         echo()
         nocbreak()
         endwin()
+        print(self.maze_filename)
         if self.won:
-            print(f"You won in {self.move_count} moves.")
+            print(f"You won in {self.move_count} moves. 🐭+🧀=😊")
         else:
-            print("You did not find the cheese.")
+            print("You did not find the cheese. 🧀")
 
         self.mouse.print_map()
 
