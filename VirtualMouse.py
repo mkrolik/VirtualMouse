@@ -1,5 +1,5 @@
 import time
-from curses import wrapper, curs_set
+from curses import wrapper, curs_set, newwin, echo, nocbreak, endwin, resetty
 import random
 from collections import defaultdict
 
@@ -76,13 +76,17 @@ class Maze:
             self.won = True
         self.stdscr.addch(self.mouse.y, self.mouse.x, self.mouse.character)
         self.stdscr.refresh()
-
+        self.diagwin.clear()
+        self.diagwin.addstr(self.mouse.get_map())
+        self.diagwin.refresh()
 
     def play_internal(self, stdscr, mouse):
         # Clear screen
-        self.stdscr = stdscr
+
         mouse.get_key_func = stdscr.getkey
         stdscr.clear()
+        self.stdscr = stdscr # newwin(len(self.maze), len(self.maze[0]))
+        self.diagwin = newwin(0,0,1,len(self.maze[0])+2)
         curs_set(0) 
         try:
             stdscr.addstr(0, 0, str(maze))
@@ -111,6 +115,9 @@ class Maze:
         self.mouse.save_char = "S"
         
         wrapper(maze.play_internal, mouse)
+        echo()
+        nocbreak()
+        endwin()
         if self.won:
             print(f"You won in {self.move_count} moves.")
         else:
@@ -127,7 +134,7 @@ class BaseMouse:
         self.position = (0,0)
         temp = ['?'] * (((len(maze.maze[0])-2)//4) * 4 + 1)
         self.map = []
-        for i in range(((len(maze.maze)-1)//2 * 4 + 1)):
+        for i in range(((len(maze.maze)-1)//2 * 4 + 1) + 1):
             self.map.append(temp.copy())
         self.map_x_offset = ((len(maze.maze[0])-2)//4) * 2
         self.map_y_offset = ((len(maze.maze)-1)//2) * 2
@@ -149,9 +156,13 @@ class BaseMouse:
         self.map[row + self.map_y_offset][col + self.map_x_offset] = self.save_char
 
     def print_map(self):
+        print(self.get_map())
+
+    def get_map(self):
+        s = ""
         for line in self.map[self.min_y_position + self.map_y_offset -1 : self.max_y_position+ self.map_y_offset + 2]:
-            print("\r" + "".join(line[self.min_x_position + self.map_x_offset -1 : self.max_x_position+ self.map_x_offset + 2]))
-        
+            s = s + "" + "".join(line[self.min_x_position + self.map_x_offset -1 : self.max_x_position+ self.map_x_offset + 2]) + "\n"
+        return s        
 
     @property
     def character(self):
@@ -169,6 +180,9 @@ class RandomMouse(BaseMouse):
         super().__init__(maze)
     
     def move(self):
+        self.position = (self.y, self.x//2)
+        self.record_map()
+
         if self.direction == "up":
             if self.maze.can_move_up():
                 self.maze.move_up()
@@ -278,6 +292,8 @@ class HumanMouse(BaseMouse):
         super().__init__(maze)
     
     def move(self):
+        self.position = (self.y, self.x//2)
+        self.record_map()
         key = self.get_key_func()
         if key == 'KEY_UP':
             self.maze.move_up()
@@ -292,8 +308,9 @@ class HumanMouse(BaseMouse):
 
     
 if __name__ == "__main__":
+    time.sleep(20)
     maze = Maze()    
-    maze.load("mazefiles/classic/13ye.txt")
+    maze.load("mazefiles/classic/uknov2015a.txt")
     m1 = HumanMouse(maze)
     m2 = RandomMouse(maze)
     m3 = SlamDfs(maze)
