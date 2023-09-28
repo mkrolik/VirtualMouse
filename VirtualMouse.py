@@ -1,4 +1,5 @@
 import time
+import glob
 from curses import wrapper, curs_set, newwin, echo, nocbreak, endwin, resetty
 import random
 from collections import defaultdict
@@ -12,6 +13,7 @@ class Maze:
         self.sleep_time = sleep_time
 
     def load(self, filename):
+        self.maze_filename = filename
         maze = []
         with open(filename, "r") as mfile:
             lines = mfile.readlines()
@@ -77,6 +79,7 @@ class Maze:
         self.stdscr.addch(self.mouse.y, self.mouse.x, self.mouse.character)
         self.stdscr.refresh()
         self.diagwin.clear()
+        self.diagwin.addstr(self.maze_filename + "\n")
         self.diagwin.addstr(self.mouse.get_map())
         self.diagwin.refresh()
 
@@ -308,9 +311,11 @@ class HumanMouse(BaseMouse):
 
     
 if __name__ == "__main__":
-    time.sleep(20)
+    maze_files = glob.glob("./mazefiles/[!training]*/*.txt", recursive=True)
+    maze_file = random.choice(maze_files)
     maze = Maze()    
-    maze.load("mazefiles/classic/uknov2015a.txt")
+    # maze.load("mazefiles/classic/uknov2015a.txt")
+    maze.load(maze_file)
     m1 = HumanMouse(maze)
     m2 = RandomMouse(maze)
     m3 = SlamDfs(maze)
