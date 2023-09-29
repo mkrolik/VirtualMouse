@@ -86,8 +86,9 @@ class Maze:
         self.stdscr.refresh()
         self.diagwin.clear()
         self.diagwin.addstr(self.maze_filename + "\n")
-        self.diagwin.addstr(f"x = {self.mouse.x}, y = {self.mouse.y}, pos = {self.mouse.position}  " + "\n")
-     
+        self.diagwin.addstr(f"x = {self.mouse.x}, y = {self.mouse.y}, pos = {self.mouse.position}  \n")
+        if self.mouse.stack:
+            self.diagwin.addstr(f"ss = {len(self.mouse.stack)}\n")
         self.diagwin.addstr(self.mouse.get_map())
         self.diagwin.refresh()
 
