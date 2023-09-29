@@ -23,6 +23,7 @@ class Maze:
         self.maze =  maze
         self.start = self.starting_location()
         self.move_count = 0
+        self.turn_count = 0
         self.quit = False
         self.won = False
 
@@ -31,7 +32,8 @@ class Maze:
             for col in range(len(self.maze[row])):
                 if self.maze[row][col] == "S":
                     return (row, col)
-        raise ValueError("Bad maze. No starting S found.")
+        print("Bad/training maze. No starting S found. Probably no cheese either. Defaulting 31,2 as starting position.")
+        return (31,2)
     
     def __repr__(self) -> str:
         str = ""
@@ -50,10 +52,14 @@ class Maze:
     def make_move(self, y_step=0, x_step=0, dir=None):
         self.mouse.old_y = self.mouse.y
         self.mouse.old_x = self.mouse.x
+        self.mouse.old_direction = self.mouse.direction
         self.mouse.y += y_step
         self.mouse.x += x_step
         self.mouse.direction = dir
         self.move_count += 1
+        if self.mouse.direction != self.mouse.old_direction:
+            self.turn_count += 1
+        self.mouse.position = (self.mouse.y - self.start[0], self.mouse.x//2 - self.start[1])
         self.draw_mouse()
         
     def move_up(self, step=1):
@@ -80,6 +86,8 @@ class Maze:
         self.stdscr.refresh()
         self.diagwin.clear()
         self.diagwin.addstr(self.maze_filename + "\n")
+        self.diagwin.addstr(f"x = {self.mouse.x}, y = {self.mouse.y}, pos = {self.mouse.position}  " + "\n")
+     
         self.diagwin.addstr(self.mouse.get_map())
         self.diagwin.refresh()
 
@@ -123,7 +131,7 @@ class Maze:
         endwin()
         print(self.maze_filename)
         if self.won:
-            print(f"You won in {self.move_count} moves. 🐭+🧀=😊")
+            print(f"You won in {self.move_count} moves, and {self.turn_count} turns. 🐭+🧀=😊")
         else:
             print("You did not find the cheese. 🧀")
 
@@ -221,6 +229,7 @@ class SlamDfs(BaseMouse):
     def move(self):
         row, col = self.position
         self.record_map()
+        vertex = None
         
         while self.stack:
             vertex = self.stack.pop()
@@ -228,7 +237,8 @@ class SlamDfs(BaseMouse):
                 self.visited.add(vertex)
             for neighbor in self.graph[vertex]:
                 if neighbor not in self.visited:
-                    self.stack.append(neighbor)
+                    pass
+                    #self.stack.append(neighbor)
             v_row, v_col = vertex
             if v_row == row and v_col == col:
                 continue
@@ -244,51 +254,56 @@ class SlamDfs(BaseMouse):
             elif v_row > row:
                 self.maze.move_down()
                 break
+            else:
+                pass
         
-        self.position = vertex
-        row, col = self.position
-        # create map
+        if vertex:
+            # self.position = vertex
+            row, col = self.position
+            # create map
+            #self.stack.append(vertex)
 
-        if self.maze.can_move_up():
-            if (row-1, col) not in self.visited:
-                self.graph[self.position].add((row-1, col))
-                self.graph[(row-1, col)].add(self.position)
-                self.stack.append(vertex)
-                self.stack.append((row-1, col))
-                self.map[row - 1 + self.map_y_offset][col + self.map_x_offset] = " "
+            if self.maze.can_move_up():
+                if (row-1, col) not in self.visited:
+                    self.graph[self.position].add((row-1, col))
+                    self.graph[(row-1, col)].add(self.position)
+                    self.stack.append(vertex)
+                    self.stack.append((row-1, col))
+                    self.map[row - 1 + self.map_y_offset][col + self.map_x_offset] = " "
+            else:
+                self.map[row - 1 + self.map_y_offset][col + self.map_x_offset] = "*"
+
+            if self.maze.can_move_down():
+                if (row+1, col) not in self.visited:
+                    self.graph[self.position].add((row+1, col))
+                    self.graph[(row+1, col)].add(self.position)
+                    self.stack.append(vertex)
+                    self.stack.append((row+1, col))
+                    self.map[row + 1 + self.map_y_offset][col + self.map_x_offset] = " "
+            else:
+                self.map[row + 1 + self.map_y_offset][col + self.map_x_offset] = "*"
+
+            if self.maze.can_move_right():
+                if (row, col+1) not in self.visited:
+                    self.graph[self.position].add((row, col+1))
+                    self.graph[(row, col+1)].add(self.position)
+                    self.stack.append(vertex)
+                    self.stack.append((row, col+1))
+                    self.map[row + self.map_y_offset][col + 1 + self.map_x_offset] = " "
+            else:
+                self.map[row + self.map_y_offset][col + 1 + self.map_x_offset] = "*"
+
+            if self.maze.can_move_left():
+                if (row, col-1) not in self.visited:
+                    self.graph[self.position].add((row, col-1))
+                    self.graph[(row, col-1)].add(self.position)
+                    self.stack.append(vertex)
+                    self.stack.append((row, col-1))
+                    self.map[row + self.map_y_offset][col - 1 + self.map_x_offset] = " "
+            else:
+                self.map[row + self.map_y_offset][col - 1 + self.map_x_offset] = "*"
         else:
-            self.map[row - 1 + self.map_y_offset][col + self.map_x_offset] = "*"
-
-        if self.maze.can_move_down():
-            if (row+1, col) not in self.visited:
-                self.graph[self.position].add((row+1, col))
-                self.graph[(row+1, col)].add(self.position)
-                self.stack.append(vertex)
-                self.stack.append((row+1, col))
-                self.map[row + 1 + self.map_y_offset][col + self.map_x_offset] = " "
-        else:
-            self.map[row + 1 + self.map_y_offset][col + self.map_x_offset] = "*"
-
-        if self.maze.can_move_right():
-            if (row, col+1) not in self.visited:
-                self.graph[self.position].add((row, col+1))
-                self.graph[(row, col+1)].add(self.position)
-                self.stack.append(vertex)
-                self.stack.append((row, col+1))
-                self.map[row + self.map_y_offset][col + 1 + self.map_x_offset] = " "
-        else:
-            self.map[row + self.map_y_offset][col + 1 + self.map_x_offset] = "*"
-
-        if self.maze.can_move_left():
-            if (row, col-1) not in self.visited:
-                self.graph[self.position].add((row, col-1))
-                self.graph[(row, col-1)].add(self.position)
-                self.stack.append(vertex)
-                self.stack.append((row, col-1))
-                self.map[row + self.map_y_offset][col - 1 + self.map_x_offset] = " "
-        else:
-            self.map[row + self.map_y_offset][col - 1 + self.map_x_offset] = "*"
-
+            self.maze.quit = True
         
 
 class HumanMouse(BaseMouse):
@@ -312,10 +327,11 @@ class HumanMouse(BaseMouse):
 
     
 if __name__ == "__main__":
-    maze_files = glob.glob("./mazefiles/[!training]*/*.txt", recursive=True)
+    #maze_files = glob.glob("./mazefiles/[!training]*/*.txt", recursive=True)
+    maze_files = glob.glob("./mazefiles/**/*.txt", recursive=True)
     maze_file = random.choice(maze_files)
     maze = Maze()    
-    # maze.load("mazefiles/classic/uknov2015a.txt")
+    #maze.load("./mazefiles/classic/uk2016q.txt")
     maze.load(maze_file)
     m1 = HumanMouse(maze)
     m2 = RandomMouse(maze)
