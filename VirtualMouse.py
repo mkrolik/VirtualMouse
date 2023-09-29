@@ -192,7 +192,7 @@ class RandomMouse(BaseMouse):
         super().__init__(maze)
     
     def move(self):
-        self.position = (self.y, self.x//2)
+        #self.position = (self.y, self.x//2)
         self.record_map()
 
         if self.direction == "up":
@@ -311,7 +311,6 @@ class HumanMouse(BaseMouse):
         super().__init__(maze)
     
     def move(self):
-        self.position = (self.y, self.x//2)
         self.record_map()
         key = self.get_key_func()
         if key == 'KEY_UP':
