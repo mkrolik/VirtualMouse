@@ -28,7 +28,7 @@ class Maze:
         self.quit = False
         self.won = False
         self.run_number = 1
-        self.max_run_number = 2
+        self.max_run_number = 3
 
     def starting_location(self):
         for row in range(len(self.maze)):
@@ -126,13 +126,13 @@ class Maze:
         self.stdscr.addch(self.mouse.y, self.mouse.x, self.mouse.character)
         self.stdscr.refresh()
         self.diagwin.clear()
+        self.diagwin.addstr(self.mouse.get_map())
         self.diagwin.addstr(self.maze_filename + "\n")
         self.diagwin.addstr(
             f"x = {self.mouse.x}, y = {self.mouse.y}, pos = {self.mouse.position}  \n"
         )
         if "stack" in self.mouse.__dict__:
             self.diagwin.addstr(f"ss = {len(self.mouse.stack)}\n")
-        self.diagwin.addstr(self.mouse.get_map())
         self.diagwin.refresh()
 
     def reset(self):
@@ -154,7 +154,7 @@ class Maze:
         mouse.get_key_func = stdscr.getkey
         stdscr.clear()
         self.stdscr = stdscr  # newwin(len(self.maze), len(self.maze[0]))
-        self.diagwin = newwin(0, 0, 1, len(self.maze[0]) + 2)
+        self.diagwin = newwin(0, 0, 0, len(self.maze[0]) + 2)
         curs_set(0)
         try:
             stdscr.addstr(0, 0, str(maze))
@@ -424,11 +424,14 @@ class FloodFillMouse(BaseMouse):
                 if item == -1:
                     s += "*"
                 else:
-                    color = gradient(255, 0, 0, 0, 0, 255, self.max_dist, item)
                     color_code = ""
                     if show_color:
-                        color_code = set_bg_color(color[0], color[1], color[2])
                         black_color_code = set_bg_color(0, 0, 0)
+                        if item == 0:
+                            color_code = black_color_code
+                        else :
+                            color = gradient(255, 0, 0, 0, 0, 255, self.max_dist, item)
+                            color_code = set_bg_color(color[0], color[1], color[2])
                     s += f"{color_code} {black_color_code}"
             s += "\n"
         return s
