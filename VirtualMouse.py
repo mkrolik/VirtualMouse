@@ -1,15 +1,16 @@
 import time
 import glob
-from curses import wrapper, curs_set, newwin, echo, nocbreak, endwin
+from curses import wrapper, curs_set, newwin, echo, nocbreak, endwin, start_color
+import curses
 import random
 from collections import defaultdict
-from ConsoleColor import gradient, set_bg_color
+from ConsoleColor import gradient, set_bg_color, set_curses_color_gradient
 
 
 class Maze:
     empty_spaces = [" ", "S", "G"]
 
-    def __init__(self, sleep_time=0.1) -> None:
+    def __init__(self, sleep_time=0.05) -> None:
         self.sleep_time = sleep_time
 
     def load(self, filename):
@@ -28,7 +29,7 @@ class Maze:
         self.quit = False
         self.won = False
         self.run_number = 1
-        self.max_run_number = 3
+        self.max_run_number = 5
 
     def starting_location(self):
         for row in range(len(self.maze)):
@@ -126,7 +127,8 @@ class Maze:
         self.stdscr.addch(self.mouse.y, self.mouse.x, self.mouse.character)
         self.stdscr.refresh()
         self.diagwin.clear()
-        self.diagwin.addstr(self.mouse.get_map())
+        # self.diagwin.addstr(self.mouse.get_map(show_color=True))
+        self.mouse.print_map(self.diagwin)
         self.diagwin.addstr(self.maze_filename + "\n")
         self.diagwin.addstr(
             f"x = {self.mouse.x}, y = {self.mouse.y}, pos = {self.mouse.position}  \n"
@@ -143,14 +145,15 @@ class Maze:
         self.mouse.old_x = self.start[1]
         self.mouse.save_char = "S"
         self.won = False
-        self.run_number += 1 
+        self.run_number += 1
         self.move_count = 0
         self.turn_count = 0
         self.stdscr.refresh()
 
     def play_internal(self, stdscr, mouse):
         # Clear screen
-
+        start_color()
+        set_curses_color_gradient(1000, 0, 0, 0, 0, 1000, 200, 20)
         mouse.get_key_func = stdscr.getkey
         stdscr.clear()
         self.stdscr = stdscr  # newwin(len(self.maze), len(self.maze[0]))
@@ -175,6 +178,13 @@ class Maze:
                 else:
                     maze.quit = True
             time.sleep(self.sleep_time)
+        if self.won:
+            stdscr.addstr(len(self.maze),0,f"You won in {self.move_count} moves, and {self.turn_count} turns. 🐭+🧀=😊\n")
+        else:
+            stdscr.addstr(len(self.maze),0,"You did not find the cheese. 🧀\n")
+        stdscr.addstr("Press any key to exit.")    
+        stdscr.getkey()
+
 
     def play(self, mouse):
         self.mouse = mouse
@@ -188,13 +198,6 @@ class Maze:
         echo()
         nocbreak()
         endwin()
-        print(self.maze_filename)
-        if self.won:
-            print(f"You won in {self.move_count} moves, and {self.turn_count} turns. 🐭+🧀=😊")
-        else:
-            print("You did not find the cheese. 🧀")
-
-        self.mouse.print_map()
 
 
 class BaseMouse:
@@ -413,28 +416,20 @@ class FloodFillMouse(BaseMouse):
         if not self.maze.can_move_left():
             self.map[self.y][self.x // 2 - 1] = -1
 
-    def print_map(self):
-        print(self.get_map(show_color=True))
-
-    def get_map(self, show_color=False):
-        s = ""
+    def print_map(self, win):
         black_color_code = ""
         for row in self.fillmap:
             for item in row:
                 if item == -1:
-                    s += "*"
+                    win.addch("*")
                 else:
-                    color_code = ""
-                    if show_color:
-                        black_color_code = set_bg_color(0, 0, 0)
-                        if item == 0:
-                            color_code = black_color_code
-                        else :
-                            color = gradient(255, 0, 0, 0, 0, 255, self.max_dist, item)
-                            color_code = set_bg_color(color[0], color[1], color[2])
-                    s += f"{color_code} {black_color_code}"
-            s += "\n"
-        return s
+                    if item == 0:
+                        win.addch(" ", curses.color_pair(202))
+                    else:
+                        scale = int((200 / self.max_dist) * item)
+                        win.addch(" ", curses.color_pair(2 + scale))
+            win.addch("\n")
+        return
 
     def update_flood(self):
         self.fillmap = [row.copy() for row in self.map.copy()]
@@ -486,8 +481,8 @@ class HumanMouse(BaseMouse):
 
 
 if __name__ == "__main__":
-    # maze_files = glob.glob("./mazefiles/[!training]*/*.txt", recursive=True)
-    maze_files = glob.glob("./mazefiles/**/*.txt", recursive=True)
+    maze_files = glob.glob("./mazefiles/[!training]*/*.txt", recursive=True)
+    # maze_files = glob.glob("./mazefiles/**/*.txt", recursive=True)
     maze_file = random.choice(maze_files)
     maze = Maze()
     # maze.load("./mazefiles/classic/uk2016q.txt")

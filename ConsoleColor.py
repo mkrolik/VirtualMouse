@@ -1,9 +1,19 @@
+import curses
+
+
 def set_fg_color(r, g, b):
     return f"\x1b[38;2;{r};{g};{b}m"
 
 
 def set_bg_color(r, g, b):
     return f"\x1b[48;2;{r};{g};{b}m"
+
+
+def set_curses_color_gradient(sr, sg, sb, er, eg, eb, steps, starting_color_number):
+    for n in range(steps):
+        r, g, b = gradient(sr, sg, sb, er, eg, eb, steps, n)
+        curses.init_color(starting_color_number + n, r, g, b)
+        curses.init_pair(n + 2, curses.COLOR_WHITE, starting_color_number + n)
 
 
 def gradient(sr, sg, sb, er, eg, eb, steps, n):
@@ -52,4 +62,4 @@ def test2d():
 
 if __name__ == "__main__":
     test()
-    #test2d()
+    # test2d()
