@@ -5,8 +5,10 @@
 - Includes a HumanMouse, to allow you to use your keyboard's arrow keys to manually solve.
 - Includes a RandomMouse, to use a random probability distribution to choose a path. (Hope you have lots of time)
 - Includes a SlamDfsMouse, builds a map as it is doing online DFS.
+- Includes a FloodFillMouse, builds a map with live Manhattan distance color heat map.
 
 
+https://github.com/mkrolik/VirtualMouse/assets/51525007/19407a89-ca06-407c-be8a-db4f5bcb1ce6
 
 
 https://github.com/mkrolik/VirtualMouse/assets/51525007/19ccb198-2e84-48ae-b8b6-ee78b535a0e8
